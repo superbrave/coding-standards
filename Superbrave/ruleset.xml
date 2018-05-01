@@ -16,8 +16,7 @@
     <!-- PEAR commenting checks are also added because the PEAR standard is very strict when it comes to Doc blocks -->
     <rule ref="PEAR.Commenting">
         <!-- These checks are overwitten by Superbrave.Commenting.FunctionComment -->
-        <exclude name="PEAR.Commenting.FunctionComment.MissingParamTag"/>
-        <exclude name="PEAR.Commenting.FunctionComment.MissingReturn"/>
+        <exclude name="PEAR.Commenting.FunctionComment"/>
 
         <!-- Versioning is beeing taken care of by Composer -->
         <exclude name="PEAR.Commenting.FileComment.MissingVersion"/>
