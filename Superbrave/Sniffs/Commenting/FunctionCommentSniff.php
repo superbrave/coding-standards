@@ -8,7 +8,7 @@
  * @package  Superbrave-codingstandards
  * @author   Stefan Thoolen <st@superbrave.nl>
  * @license  http://spdx.org/licenses/MIT MIT License
- * @link     https://bitbucket.org/stbrave/coding-standards
+ * @link     https://github.com/superbrave/coding-standards
  */
 
 namespace Superbrave\Sniffs\Commenting;
