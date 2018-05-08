@@ -23,6 +23,55 @@ use PHP_CodeSniffer\Files\File;
 class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commenting\FunctionCommentSniff
 {
     /**
+     * Processes this test, when one of its tokens is encountered.
+     *
+     * @param File $phpcsFile The file being scanned.
+     * @param int  $stackPtr  The position of the current token in the stack passed in $tokens.
+     *
+     * @return void
+     */
+    public function process(File $phpcsFile, $stackPtr)
+    {
+        parent::process($phpcsFile, $stackPtr);
+        $this->processReturnAboveThrows($phpcsFile, $stackPtr);
+    }
+
+    /**
+     * A throws call must be below the return call.
+     *
+     * The Superbrave standards follows the "Symfony Way" in this sniff.
+     *
+     * @param File $phpcsFile    The file being scanned.
+     * @param int  $stackPtr     The position of the current token in the stack passed in $tokens.
+     *
+     * @return void
+     */
+    protected function processReturnAboveThrows(File $phpcsFile, $stackPtr)
+    {
+        if ($this->hasInheritDoc($phpcsFile, $stackPtr)) {
+            return;
+        }
+
+        // Fetches the full function docblock
+        $docblock = $this->getDocBlock($phpcsFile, $stackPtr);
+
+        // Fetches tag locations
+        $return_pos = strpos($docblock, '@return');
+        $throws_pos = strpos($docblock, '@throws');
+
+        // One of the elements doesn't exist
+        if ($throws_pos === false || $return_pos === false) {
+            return;
+        }
+
+        // Is the throws above return?
+        if ($return_pos > $throws_pos) {
+            $error = '@throws tags should be below the @return tag, not above the @return tag';
+            $phpcsFile->addError($error, $stackPtr, 'ReturnAboveThrows');
+        }
+    }
+
+    /**
      * Process the return comment of this function comment.
      *
      * @param File $phpcsFile    The file being scanned.
@@ -68,12 +117,23 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
      */
     protected function hasInheritDoc(File $phpcsFile, $stackPtr)
     {
-        // Fetches the full function docblock
-        $start    = $phpcsFile->findPrevious(T_DOC_COMMENT_OPEN_TAG, $stackPtr - 1);
-        $end      = $phpcsFile->findNext(T_DOC_COMMENT_CLOSE_TAG, $start);
-        $docblock = $phpcsFile->getTokensAsString($start, ($end - $start));
-
         // Returns true when {@inheritdoc} exists somewhere in the docblock, otherwise false
-        return preg_match('#{@inheritdoc}#i', $docblock) === 1;
+        return preg_match('#{@inheritdoc}#i', $this->getDocBlock($phpcsFile, $stackPtr)) === 1;
+    }
+
+    /**
+     * Fetches the docblock as string
+     *
+     * @param File $phpcsFile The file being scanned.
+     * @param int  $stackPtr  The position of the current token in the stack passed in $tokens.
+     *
+     * @return string
+     */
+    protected function getDocBlock(File $phpcsFile, $stackPtr)
+    {
+        // Fetches the full function docblock
+        $start = $phpcsFile->findPrevious(T_DOC_COMMENT_OPEN_TAG, $stackPtr - 1);
+        $end   = $phpcsFile->findNext(T_DOC_COMMENT_CLOSE_TAG, $start);
+        return $phpcsFile->getTokensAsString($start, ($end - $start));
     }
 }
