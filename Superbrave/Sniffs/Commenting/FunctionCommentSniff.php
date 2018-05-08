@@ -37,7 +37,7 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
             return;
         }
 
-        return parent::processReturn($phpcsFile, $stackPtr, $commentStart);
+        parent::processReturn($phpcsFile, $stackPtr, $commentStart);
     }
 
     /**
@@ -55,7 +55,7 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
             return;
         }
 
-        return parent::processParams($phpcsFile, $stackPtr, $commentStart);
+        parent::processParams($phpcsFile, $stackPtr, $commentStart);
     }
 
     /**
