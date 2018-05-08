@@ -43,7 +43,6 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
      *
      * @param File $phpcsFile    The file being scanned.
      * @param int  $stackPtr     The position of the current token in the stack passed in $tokens.
-     * @param int  $commentStart The position in the stack where the comment started.
      *
      * @return void
      */
