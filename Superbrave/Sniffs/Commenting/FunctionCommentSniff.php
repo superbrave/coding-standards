@@ -49,7 +49,9 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
     protected function processReturnAboveThrows(File $phpcsFile, $stackPtr)
     {
         // Fetches the full function docblock
-        $docblock = $this->getDocBlock($phpcsFile, $stackPtr);
+        $startToken = null;
+        $endToken = null;
+        $docblock = $this->getDocBlock($phpcsFile, $stackPtr, $startToken, $endToken);
         if ($this->hasInheritDoc($phpcsFile, $stackPtr, $docblock)) {
             return;
         }
@@ -66,7 +68,38 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
         // Is the throws above return?
         if ($return_pos > $throws_pos) {
             $error = '@throws tags should be below the @return tag, not above the @return tag';
-            $phpcsFile->addError($error, $stackPtr, 'ReturnAboveThrows');
+            $fix   = $phpcsFile->addFixableError($error, $stackPtr, 'ReturnAboveThrows');
+
+            // When the patcher is active, fix the issue
+            if ($fix === true) {
+                // Breaks up the docblock in three parts; original docblock, return and throws
+                $parts = explode('* @', $docblock);
+                $general = $return = $throws = array();
+                foreach ($parts as $part) {
+                    if (strtolower(substr($part, 0, 6)) == 'return') {
+                        array_push($return, $part);
+                    } else if (strtolower(substr($part, 0, 6)) == 'throws') {
+                        array_push($throws, $part);
+                    } else {
+                        array_push($general, $part);
+                    }
+                }
+
+                // Reglues the three parts in correct sequence
+                $newDocblock = implode('* @', array_merge(
+                    $general,
+                    $return,
+                    $throws
+                ));
+
+                // Patches the file
+                $phpcsFile->fixer->beginChangeset();
+                $phpcsFile->fixer->replaceToken($startToken, $newDocblock);
+                for ($token = $startToken + 1; $token < $endToken; ++$token) {
+                    $phpcsFile->fixer->replaceToken($token, "");
+                }
+                $phpcsFile->fixer->endChangeset();
+            }
         }
     }
 
@@ -128,22 +161,24 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
     /**
      * Fetches the docblock as string
      *
-     * @param File $phpcsFile The file being scanned.
-     * @param int  $stackPtr  The position of the current token in the stack passed in $tokens.
+     * @param File     $phpcsFile  The file being scanned.
+     * @param int      $stackPtr   The position of the current token in the stack passed in $tokens.
+     * @param int|bool $startToken By reference; the token where the docblock starts
+     * @param int|bool $endToken   By reference; the token where the docblock ends
      *
      * @return string
      */
-    protected function getDocBlock(File $phpcsFile, $stackPtr)
+    protected function getDocBlock(File $phpcsFile, $stackPtr, &$startToken = null, &$endToken = null)
     {
         // Fetches the full function docblock
-        $start = $phpcsFile->findPrevious(T_DOC_COMMENT_OPEN_TAG, $stackPtr - 1);
-        if ($start === false) {
+        $startToken = $phpcsFile->findPrevious(T_DOC_COMMENT_OPEN_TAG, $stackPtr - 1);
+        if ($startToken === false) {
             return '';
         }
-        $end   = $phpcsFile->findNext(T_DOC_COMMENT_CLOSE_TAG, $start);
-        if ($end === false) {
+        $endToken = $phpcsFile->findNext(T_DOC_COMMENT_CLOSE_TAG, $startToken);
+        if ($endToken === false) {
             return '';
         }
-        return $phpcsFile->getTokensAsString($start, ($end - $start));
+        return $phpcsFile->getTokensAsString($startToken, ($endToken - $startToken));
     }
 }
