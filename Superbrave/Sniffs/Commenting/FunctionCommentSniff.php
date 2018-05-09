@@ -48,12 +48,11 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
      */
     protected function processReturnAboveThrows(File $phpcsFile, $stackPtr)
     {
-        if ($this->hasInheritDoc($phpcsFile, $stackPtr)) {
-            return;
-        }
-
         // Fetches the full function docblock
         $docblock = $this->getDocBlock($phpcsFile, $stackPtr);
+        if ($this->hasInheritDoc($phpcsFile, $stackPtr, $docblock)) {
+            return;
+        }
 
         // Fetches tag locations
         $return_pos = strpos($docblock, '@return');
@@ -110,15 +109,20 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
     /**
      * Detects an {@inheritdoc} tag inside of the docblock
      *
-     * @param File $phpcsFile The file being scanned.
-     * @param int  $stackPtr  The position of the current token in the stack passed in $tokens.
+     * @param File   $phpcsFile The file being scanned.
+     * @param int    $stackPtr  The position of the current token in the stack passed in $tokens.
+     * @param string $docblock  Optional; when specified, this will be used as docblock
      *
      * @return boolean True if the comment contains an {@inheritdoc}
      */
-    protected function hasInheritDoc(File $phpcsFile, $stackPtr)
+    protected function hasInheritDoc(File $phpcsFile, $stackPtr, $docblock = null)
     {
+        if ($docblock === null) {
+            $docblock = $this->getDocBlock($phpcsFile, $stackPtr);
+        }
+
         // Returns true when {@inheritdoc} exists somewhere in the docblock, otherwise false
-        return preg_match('#{@inheritdoc}#i', $this->getDocBlock($phpcsFile, $stackPtr)) === 1;
+        return preg_match('#{@inheritdoc}#i', $docblock) === 1;
     }
 
     /**
