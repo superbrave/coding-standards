@@ -133,7 +133,13 @@ class FunctionCommentSniff extends \PHP_CodeSniffer\Standards\PEAR\Sniffs\Commen
     {
         // Fetches the full function docblock
         $start = $phpcsFile->findPrevious(T_DOC_COMMENT_OPEN_TAG, $stackPtr - 1);
+        if ($start === false) {
+            return '';
+        }
         $end   = $phpcsFile->findNext(T_DOC_COMMENT_CLOSE_TAG, $start);
+        if ($end === false) {
+            return '';
+        }
         return $phpcsFile->getTokensAsString($start, ($end - $start));
     }
 }
